@@ -1,0 +1,54 @@
+import { AxiosInstance, AxiosResponse } from "axios";
+
+
+// interface_here
+
+interface Query {
+    search: string
+}
+
+interface Response {
+    search: string
+}
+
+interface Payload {
+    search: string
+}
+
+
+
+
+
+class ClientSdk {
+    client!: AxiosInstance
+
+}
+const clientSdk = new ClientSdk()
+
+export function SetClient(client: AxiosInstance) {
+    clientSdk.client = client
+}
+
+
+
+
+export async function getData(query: Query) {
+    let res = await clientSdk.client.get<any, AxiosResponse<Response, any>, Payload>('/', {
+        params: query
+    });
+    return res.data;
+}
+
+
+export async function postData(query: Query) {
+    let res = await clientSdk.client.post<any, AxiosResponse<Response, any>, Payload>('/', {
+        search: "asasdasd"
+    }, {
+        params: query
+    });
+    return res.data;
+}
+
+
+// apis_here
+
