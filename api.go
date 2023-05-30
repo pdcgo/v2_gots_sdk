@@ -9,7 +9,7 @@ import (
 )
 
 var templateFunc = `
-export async function #FuncName#(query: #Query#) {
+export async function #FuncName#(query: #Query#): Promise<#Response#> {
     let res = await clientSdk.client.Method<any, AxiosResponse<#Response#, any>, any>('#Url#', {
         params: query,
     });
@@ -18,7 +18,7 @@ export async function #FuncName#(query: #Query#) {
 `
 
 var templateFuncWithBody = `
-export async function #FuncName#(query: #Query#, data: #Payload#) {
+export async function #FuncName#(query: #Query#, data: #Payload#): Promise<#Response#> {
     let res = await clientSdk.client.Method<any, AxiosResponse<#Response#, any>, #Payload#>('#Url#', data, {
         params: query,
     });

@@ -12,6 +12,10 @@ type PayloadDataDD struct {
 	Name string
 }
 
+type ResponseData struct {
+	Data string `json:"data"`
+}
+
 func TestCreateSDK(t *testing.T) {
 	sdk := v2_gots_sdk.NewApiSdk(gin.Default())
 
@@ -34,7 +38,9 @@ func TestCreateSDK(t *testing.T) {
 
 	usrg := datag.Group("/user")
 	usrg.Register(&v2_gots_sdk.Api{
-		Method: http.MethodPost,
+		Method:       http.MethodPost,
+		RelativePath: "create",
+		Response:     ResponseData{},
 	}, func(ctx *gin.Context) {})
 
 	sdk.RegisterGroup("/product", func(group *gin.RouterGroup, register v2_gots_sdk.RegisterFunc) {
