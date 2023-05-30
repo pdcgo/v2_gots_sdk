@@ -2,6 +2,7 @@ package v2_gots_sdk
 
 import (
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -70,8 +71,42 @@ func (sdk *ApiSdk) Register(api *Api, handlers ...gin.HandlerFunc) gin.IRoutes {
 	return sdk.R.Handle(api.Method, api.RelativePath, handlers...)
 }
 
+type SdkGroup struct {
+	sdk      *ApiSdk
+	G        *gin.RouterGroup
+	Basepath string
+}
+
+func (grp *SdkGroup) Register(api *Api, handlers ...gin.HandlerFunc) gin.IRoutes {
+	api.GroupPath = grp.Basepath
+	grp.sdk.toSdk(api)
+	return grp.G.Handle(api.Method, api.RelativePath, handlers...)
+}
+
+func (grp *SdkGroup) Group(path string) *SdkGroup {
+	base, _ := url.JoinPath(grp.Basepath, path)
+	newGroup := SdkGroup{
+		sdk:      grp.sdk,
+		G:        grp.G.Group(path),
+		Basepath: base,
+	}
+
+	return &newGroup
+}
+
+func (sdk *ApiSdk) Group(relativePath string) *SdkGroup {
+	newGroup := SdkGroup{
+		sdk:      sdk,
+		G:        sdk.R.Group(relativePath),
+		Basepath: relativePath,
+	}
+
+	return &newGroup
+}
+
 func (sdk *ApiSdk) RegisterGroup(relativePath string, groupHandler func(group *gin.RouterGroup, register RegisterFunc)) {
 	r := sdk.R.Group(relativePath)
+
 	var registfn RegisterFunc = func(api *Api, handlers ...gin.HandlerFunc) gin.IRoutes {
 		api.GroupPath = relativePath
 
