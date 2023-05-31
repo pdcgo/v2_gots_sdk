@@ -18,6 +18,6 @@ func TestGenerateTs(t *testing.T) {
 		Payload:      &PayloadData{},
 	}
 
-	tsfunc := api.GenerateTs()
+	tsfunc := api.GenerateTs(true)
 	t.Log(tsfunc)
 }

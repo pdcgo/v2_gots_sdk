@@ -19,7 +19,7 @@ type ResponseData struct {
 func TestCreateSDK(t *testing.T) {
 	sdk := v2_gots_sdk.NewApiSdk(gin.Default())
 
-	save := sdk.GenerateSdkFunc("sdk.ts")
+	save := sdk.GenerateSdkFunc("sdk.ts", true)
 
 	sdk.Register(&v2_gots_sdk.Api{
 		Payload:      PayloadDataDD{},

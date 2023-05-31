@@ -19,7 +19,29 @@ type ApiSdk struct {
 	toSdk AddSdkFunc
 }
 
-func (sdk *ApiSdk) GenerateSdkFunc(fname string) (createSdkJs func()) {
+func (sdk *ApiSdk) GenerateToni(f *os.File, funcscripts []string) {
+	model, _ := sdk.Model.Convert(map[string]string{})
+	f.WriteString(model)
+	f.WriteString("\n")
+	f.WriteString("export type SdkConfig = { \n")
+	f.WriteString(strings.Join(funcscripts, ",\n"))
+	f.WriteString("\n}\n")
+}
+
+func (sdk *ApiSdk) GenerateStandar(f *os.File, funcscripts []string) {
+	model, _ := sdk.Model.Convert(map[string]string{})
+
+	f.WriteString(templateImportHead)
+	f.WriteString("\n\n")
+	f.WriteString(model)
+	f.WriteString("\n")
+	f.WriteString(templateClassApi)
+	f.WriteString("\n")
+	f.WriteString(strings.Join(funcscripts, "\n"))
+
+}
+
+func (sdk *ApiSdk) GenerateSdkFunc(fname string, tonimode bool) (createSdkJs func()) {
 
 	funcscripts := []string{}
 
@@ -37,7 +59,7 @@ func (sdk *ApiSdk) GenerateSdkFunc(fname string) (createSdkJs func()) {
 		if response != nil {
 			sdk.Model.Add(response)
 		}
-		funcscripts = append(funcscripts, api.GenerateTs())
+		funcscripts = append(funcscripts, api.GenerateTs(tonimode))
 	}
 
 	return func() {
@@ -50,15 +72,11 @@ func (sdk *ApiSdk) GenerateSdkFunc(fname string) (createSdkJs func()) {
 		}
 		defer f.Close()
 
-		model, _ := sdk.Model.Convert(map[string]string{})
-
-		f.WriteString(templateImportHead)
-		f.WriteString("\n\n")
-		f.WriteString(model)
-		f.WriteString("\n")
-		f.WriteString(templateClassApi)
-		f.WriteString("\n")
-		f.WriteString(strings.Join(funcscripts, "\n"))
+		if tonimode {
+			sdk.GenerateToni(f, funcscripts)
+		} else {
+			sdk.GenerateStandar(f, funcscripts)
+		}
 	}
 
 }

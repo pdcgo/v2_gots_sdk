@@ -39,8 +39,11 @@ export function SetClient(client: AxiosInstance) {
 }
 `
 
-func getStructName(data interface{}) string {
+func getStructName(data interface{}, undefinedmode bool) string {
 	if data == nil {
+		if undefinedmode {
+			return "undefined"
+		}
 		return "any"
 	}
 
@@ -77,7 +80,11 @@ func (api *Api) replaceFuncName(template string) string {
 	return template
 }
 
-func (api *Api) GenerateTs() string {
+func (api *Api) GenerateTs(tonimode bool) string {
+	if tonimode {
+		return api.GenerateTsToni()
+	}
+
 	var template string
 
 	if api.Payload != nil {
@@ -87,9 +94,21 @@ func (api *Api) GenerateTs() string {
 	}
 
 	template = strings.ReplaceAll(template, "Method", strings.ToLower(api.Method))
-	template = strings.ReplaceAll(template, "#Query#", getStructName(api.Query))
-	template = strings.ReplaceAll(template, "#Response#", getStructName(api.Response))
-	template = strings.ReplaceAll(template, "#Payload#", getStructName(api.Payload))
+	template = strings.ReplaceAll(template, "#Query#", getStructName(api.Query, false))
+	template = strings.ReplaceAll(template, "#Response#", getStructName(api.Response, false))
+	template = strings.ReplaceAll(template, "#Payload#", getStructName(api.Payload, false))
+
+	template = api.replaceFuncName(template)
+
+	return template
+}
+
+func (api *Api) GenerateTsToni() string {
+	template := toniTemplate
+	template = strings.ReplaceAll(template, "Method", strings.ToLower(api.Method))
+	template = strings.ReplaceAll(template, "#Query#", getStructName(api.Query, true))
+	template = strings.ReplaceAll(template, "#Response#", getStructName(api.Response, true))
+	template = strings.ReplaceAll(template, "#Payload#", getStructName(api.Payload, true))
 
 	template = api.replaceFuncName(template)
 
