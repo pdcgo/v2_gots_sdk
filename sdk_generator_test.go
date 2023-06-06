@@ -51,5 +51,14 @@ func TestCreateSDK(t *testing.T) {
 		})
 	})
 
+	sdk.RegisterGroup("/product_data", func(group *gin.RouterGroup, register v2_gots_sdk.RegisterFunc) {
+		register(&v2_gots_sdk.Api{
+			Payload:      []*PayloadDataDD{},
+			Method:       http.MethodPost,
+			Response:     []string{},
+			RelativePath: "/create",
+		})
+	})
+
 	save()
 }

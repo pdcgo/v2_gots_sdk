@@ -46,20 +46,7 @@ func (sdk *ApiSdk) GenerateSdkFunc(fname string, tonimode bool) (createSdkJs fun
 	funcscripts := []string{}
 
 	sdk.toSdk = func(api *Api) {
-		query := api.Query
-		payload := api.Payload
-		response := api.Response
-
-		if query != nil {
-			sdk.Model.Add(query)
-		}
-		if payload != nil {
-			sdk.Model.Add(payload)
-		}
-		if response != nil {
-			sdk.Model.Add(response)
-		}
-		funcscripts = append(funcscripts, api.GenerateTs(tonimode))
+		funcscripts = append(funcscripts, api.GenerateTs(sdk.Model, tonimode))
 	}
 
 	return func() {

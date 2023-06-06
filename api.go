@@ -1,11 +1,14 @@
 package v2_gots_sdk
 
 import (
+	"log"
+	"net/url"
 	"path/filepath"
 	"reflect"
 	"strings"
 
 	"github.com/iancoleman/strcase"
+	"github.com/tkrajina/typescriptify-golang-structs/typescriptify"
 )
 
 var templateFunc = `
@@ -39,20 +42,6 @@ export function SetClient(client: AxiosInstance) {
 }
 `
 
-func getStructName(data interface{}, undefinedmode bool) string {
-	if data == nil {
-		if undefinedmode {
-			return "undefined"
-		}
-		return "any"
-	}
-
-	if reflect.ValueOf(data).Kind() == reflect.Ptr {
-		return reflect.Indirect(reflect.ValueOf(data)).Type().Name()
-	}
-	return reflect.TypeOf(data).Name()
-}
-
 type Api struct {
 	Method       string
 	RelativePath string
@@ -62,9 +51,13 @@ type Api struct {
 	GroupPath    string
 }
 
-func (api *Api) replaceFuncName(template string) string {
-	name := filepath.Join(api.GroupPath, api.RelativePath)
-	name = strings.ReplaceAll(name, `\`, `/`)
+func (api *Api) replaceFuncName(template string, relative bool) string {
+	name, _ := url.JoinPath(api.GroupPath, api.RelativePath)
+
+	if relative {
+		name = strings.TrimPrefix(name, `/`)
+	}
+
 	template = strings.ReplaceAll(template, "#Url#", name)
 
 	fnname := ""
@@ -80,9 +73,9 @@ func (api *Api) replaceFuncName(template string) string {
 	return template
 }
 
-func (api *Api) GenerateTs(tonimode bool) string {
+func (api *Api) GenerateTs(generator *typescriptify.TypeScriptify, tonimode bool) string {
 	if tonimode {
-		return api.GenerateTsToni()
+		return api.GenerateTsToni(generator)
 	}
 
 	var template string
@@ -94,23 +87,92 @@ func (api *Api) GenerateTs(tonimode bool) string {
 	}
 
 	template = strings.ReplaceAll(template, "Method", strings.ToLower(api.Method))
-	template = strings.ReplaceAll(template, "#Query#", getStructName(api.Query, false))
-	template = strings.ReplaceAll(template, "#Response#", getStructName(api.Response, false))
-	template = strings.ReplaceAll(template, "#Payload#", getStructName(api.Payload, false))
+	template = strings.ReplaceAll(template, "#Query#", api.getStructName(generator, api.Query, false))
+	template = strings.ReplaceAll(template, "#Response#", api.getStructName(generator, api.Response, false))
+	template = strings.ReplaceAll(template, "#Payload#", api.getStructName(generator, api.Payload, false))
 
-	template = api.replaceFuncName(template)
+	template = api.replaceFuncName(template, false)
 
 	return template
 }
 
-func (api *Api) GenerateTsToni() string {
+func (api *Api) GenerateTsToni(generator *typescriptify.TypeScriptify) string {
 	template := toniTemplate
 	template = strings.ReplaceAll(template, "Method", strings.ToLower(api.Method))
-	template = strings.ReplaceAll(template, "#Query#", getStructName(api.Query, true))
-	template = strings.ReplaceAll(template, "#Response#", getStructName(api.Response, true))
-	template = strings.ReplaceAll(template, "#Payload#", getStructName(api.Payload, true))
+	template = strings.ReplaceAll(template, "#Query#", api.getStructName(generator, api.Query, true))
+	template = strings.ReplaceAll(template, "#Response#", api.getStructName(generator, api.Response, true))
+	template = strings.ReplaceAll(template, "#Payload#", api.getStructName(generator, api.Payload, true))
 
-	template = api.replaceFuncName(template)
+	template = api.replaceFuncName(template, true)
 
 	return template
+}
+
+func (api *Api) getStructName(generator *typescriptify.TypeScriptify, data interface{}, undefinedmode bool) string {
+	if data == nil {
+		if undefinedmode {
+			return "undefined"
+		}
+		return "any"
+	}
+
+	tipeval := reflect.TypeOf(data)
+
+	var getType func(data reflect.Type) string
+	getType = func(data reflect.Type) string {
+
+		switch data.Kind() {
+		case reflect.Slice:
+			hasil := ""
+			elem := data.Elem()
+			if elem.Kind() == reflect.Pointer {
+				elem = elem.Elem()
+			}
+
+			var name string
+			if elem.Kind() == reflect.Struct {
+				generator.Add(elem)
+				name = elem.Name()
+				log.Println("name elem", name)
+
+			} else {
+				name = getType(elem)
+			}
+
+			hasil = name + "[]"
+
+			return hasil
+
+		case reflect.Pointer:
+			elem := tipeval.Elem()
+			generator.Add(elem)
+
+			return elem.Name()
+		case reflect.Struct:
+			generator.Add(data)
+
+			return tipeval.Name()
+
+		case reflect.String:
+			return "string"
+		case reflect.Bool:
+			return "boolean"
+		case reflect.Int:
+			return "number"
+		case reflect.Int8:
+			return "number"
+		case reflect.Int16:
+			return "number"
+		case reflect.Int32:
+			return "number"
+		case reflect.Int64:
+			return "number"
+		default:
+			return "any"
+		}
+
+	}
+
+	return getType(tipeval)
+
 }
