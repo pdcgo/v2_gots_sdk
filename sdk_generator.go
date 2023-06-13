@@ -20,6 +20,8 @@ type ApiSdk struct {
 }
 
 func (sdk *ApiSdk) GenerateToni(f *os.File, funcscripts []string) {
+	f.WriteString("/* eslint-disable @typescript-eslint/no-explicit-any */\n\n")
+
 	model, _ := sdk.Model.Convert(map[string]string{})
 	f.WriteString(model)
 	f.WriteString("\n")
