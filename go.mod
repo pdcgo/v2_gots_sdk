@@ -56,6 +56,7 @@ require (
 
 require (
 	github.com/gin-gonic/gin v1.9.0
+	github.com/google/uuid v1.3.0
 	github.com/pdcgo/common_conf v1.1.0
 	github.com/tkrajina/go-reflector v0.5.5 // indirect
 	nhooyr.io/websocket v1.8.7

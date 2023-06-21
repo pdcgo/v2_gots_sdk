@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"math/rand"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pdcgo/v2_gots_sdk"
@@ -40,28 +42,56 @@ func (d *PongTest) KeyEvent() string {
 	return "pong_test"
 }
 
+type BroadcastName struct {
+	Name string `json:"name"`
+}
+
+func (d *BroadcastName) KeyEvent() string {
+	return "broadcast_data"
+}
+
 func createSocket() *v2_gots_sdk.SocketGenerator {
 	socket := v2_gots_sdk.NewSocketGenerator()
 	save := socket.GenerateSocketSdkFunc("samples_frontend/src/socketsdk.ts")
 	defer save()
 	socket.Register(&PongTest{})
-	socket.Register(&PingTest{}, func(event *v2_gots_sdk.EventMessage, emit func(data v2_gots_sdk.EventIface)) {
+	socket.Register(&BroadcastName{})
+
+	count := 0
+	namereasons := []string{
+		"Locked out",
+		"Pipes broke",
+		"Food poisoning",
+		"Not feeling well",
+		"budi raharjo",
+		"budi papardi",
+		"hello world",
+	}
+
+	socket.Register(&PingTest{}, func(event *v2_gots_sdk.EventMessage, client *v2_gots_sdk.SocketClient) {
 		var msg PingTest
 
 		event.BindJSON(&msg)
 		log.Println(msg)
 
 		for c := range [3]int{} {
-			emit(&PongTest{
-				Data: c,
+			count = count + c
+			client.Emit(&PongTest{
+				Data: count,
 			})
 		}
+
+		ind := rand.Intn(len(namereasons))
+		client.Broadcast(&BroadcastName{
+			Name: namereasons[ind],
+		})
 	})
 
 	return socket
 }
 
 func main() {
+	rand.Seed(time.Now().Unix())
 	r := gin.Default()
 	r.Use(CORSMiddleware())
 

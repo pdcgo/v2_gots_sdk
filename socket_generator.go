@@ -1,7 +1,6 @@
 package v2_gots_sdk
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -27,12 +26,13 @@ func (event *EventMessage) BindJSON(data interface{}) error {
 	return json.Unmarshal(event.Body, data)
 }
 
-type SocketHandler func(event *EventMessage, emit func(data EventIface))
+type SocketHandler func(event *EventMessage, client *SocketClient)
 
 type SocketGenerator struct {
-	toSocketSdk func(event EventIface)
-	HandlerData map[string][]SocketHandler
-	Model       *typescriptify.TypeScriptify
+	toSocketSdk    func(event EventIface)
+	HandlerData    map[string][]SocketHandler
+	Model          *typescriptify.TypeScriptify
+	PoolConnection *SocketClientPool
 }
 
 func NewSocketGenerator() *SocketGenerator {
@@ -40,10 +40,14 @@ func NewSocketGenerator() *SocketGenerator {
 	model := typescriptify.New()
 	model.CreateInterface = true
 	model.CreateConstructor = false
+
+	pool := NewSocketClientPool()
+
 	socket := SocketGenerator{
-		toSocketSdk: func(event EventIface) {},
-		HandlerData: map[string][]SocketHandler{},
-		Model:       model,
+		toSocketSdk:    func(event EventIface) {},
+		HandlerData:    map[string][]SocketHandler{},
+		Model:          model,
+		PoolConnection: pool,
 	}
 	return &socket
 }
@@ -76,7 +80,6 @@ func (socket *SocketGenerator) Register(event EventIface, handler ...SocketHandl
 }
 
 func (socket *SocketGenerator) GinHandler(c *gin.Context) {
-	log.Println("connected")
 	conn, wsErr := websocket.Accept(c.Writer, c.Request, &websocket.AcceptOptions{
 		InsecureSkipVerify: true,
 	})
@@ -88,38 +91,14 @@ func (socket *SocketGenerator) GinHandler(c *gin.Context) {
 
 	defer conn.Close(websocket.StatusInternalError, "Closed unexepetedly")
 
-	log.Println("socket ready")
+	client, disconnect := socket.PoolConnection.CreateClient(conn, c.Request)
+	defer disconnect()
 
-	ctx, cancel := context.WithCancel(c.Request.Context())
-	defer cancel()
-
-	emit := func(data EventIface) {
-		jsondata, err := json.Marshal(data)
-		if err != nil {
-			pdc_common.ReportError(err)
-			return
-		}
-
-		eventdata := EventMessage{
-			EventKey: data.KeyEvent(),
-			Body:     jsondata,
-		}
-
-		dataevent, err := json.Marshal(&eventdata)
-		if err != nil {
-			pdc_common.ReportError(err)
-			return
-		}
-		conn.Write(ctx, websocket.MessageText, dataevent)
-	}
+	ctx := client.Ctx
 
 Parent:
 	for {
-		msgtype, data, err := conn.Read(ctx)
-		if err != nil {
-			pdc_common.ReportError(err)
-			break
-		}
+		msgtype, data, errRead := conn.Read(ctx)
 
 		switch msgtype {
 		case websocket.MessageText:
@@ -129,15 +108,19 @@ Parent:
 
 			handlers := socket.HandlerData[event.EventKey]
 			for _, handler := range handlers {
-				handler(&event, emit)
+				handler(&event, client)
 			}
 
 		case websocket.MessageType(0):
-			log.Println("socket disconnect")
+			log.Println("client disconnecting..", client.ID)
 			break Parent
+		default:
+			if errRead != nil {
+				pdc_common.ReportError(errRead)
+				break Parent
+			}
 		}
 
-		//
 	}
 
 }
