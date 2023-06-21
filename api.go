@@ -87,9 +87,9 @@ func (api *Api) GenerateTs(generator *typescriptify.TypeScriptify, tonimode bool
 	}
 
 	template = strings.ReplaceAll(template, "Method", strings.ToLower(api.Method))
-	template = strings.ReplaceAll(template, "#Query#", api.getStructName(generator, api.Query, false))
-	template = strings.ReplaceAll(template, "#Response#", api.getStructName(generator, api.Response, false))
-	template = strings.ReplaceAll(template, "#Payload#", api.getStructName(generator, api.Payload, false))
+	template = strings.ReplaceAll(template, "#Query#", getStructName(generator, api.Query, false))
+	template = strings.ReplaceAll(template, "#Response#", getStructName(generator, api.Response, false))
+	template = strings.ReplaceAll(template, "#Payload#", getStructName(generator, api.Payload, false))
 
 	template = api.replaceFuncName(template, false)
 
@@ -99,16 +99,16 @@ func (api *Api) GenerateTs(generator *typescriptify.TypeScriptify, tonimode bool
 func (api *Api) GenerateTsToni(generator *typescriptify.TypeScriptify) string {
 	template := toniTemplate
 	template = strings.ReplaceAll(template, "Method", strings.ToLower(api.Method))
-	template = strings.ReplaceAll(template, "#Query#", api.getStructName(generator, api.Query, true))
-	template = strings.ReplaceAll(template, "#Response#", api.getStructName(generator, api.Response, true))
-	template = strings.ReplaceAll(template, "#Payload#", api.getStructName(generator, api.Payload, true))
+	template = strings.ReplaceAll(template, "#Query#", getStructName(generator, api.Query, true))
+	template = strings.ReplaceAll(template, "#Response#", getStructName(generator, api.Response, true))
+	template = strings.ReplaceAll(template, "#Payload#", getStructName(generator, api.Payload, true))
 
 	template = api.replaceFuncName(template, true)
 
 	return template
 }
 
-func (api *Api) getStructName(generator *typescriptify.TypeScriptify, data interface{}, undefinedmode bool) string {
+func getStructName(generator *typescriptify.TypeScriptify, data interface{}, undefinedmode bool) string {
 	if data == nil {
 		if undefinedmode {
 			return "undefined"
