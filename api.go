@@ -51,6 +51,25 @@ type Api struct {
 	GroupPath    string
 }
 
+func (api *Api) GetFullUriPath() string {
+	name, _ := url.JoinPath(api.GroupPath, api.RelativePath)
+	return name
+}
+
+func (api *Api) GetKeyName() string {
+	name, _ := url.JoinPath(api.GroupPath, api.RelativePath)
+	name = strings.TrimPrefix(name, `/`)
+
+	fnname := ""
+	funcname := filepath.Join(strings.ToLower(api.Method), name)
+	funcs := strings.Split(funcname, `\`)
+	for _, u := range funcs {
+		fnname += strcase.ToCamel(u)
+	}
+
+	return fnname
+}
+
 func (api *Api) replaceFuncName(template string, relative bool) string {
 	name, _ := url.JoinPath(api.GroupPath, api.RelativePath)
 
