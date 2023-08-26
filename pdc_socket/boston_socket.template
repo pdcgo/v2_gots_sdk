@@ -1,0 +1,169 @@
+import { nanoid } from "nanoid"
+import { createContext, useContext } from "react"
+
+export class Uint extends Number { }
+export class Int extends Number { }
+export class Float32 extends Number { }
+export class Float64 extends Number { }
+
+export type MaybeUndefined<T> = T | undefined
+export type MaybeNull<T> = T | null
+
+export type AllowUndefined<T> = undefined | T
+
+/** Custom utility -> untuk filter & menambahkan question mark untuk value yang kemungkinan undefined */
+export type PickOptional<T> = {
+    [K in keyof T as T extends Record<K, undefined extends T[K] ? T[K] : never> ? K : never]?: T[K]
+}
+export type PickRequired<T> = Omit<T, keyof PickOptional<T>>
+export type Combination<T> = PickRequired<T> & PickOptional<T>
+
+
+// <client_declaration>
+
+export const client = {
+	clientCanEmits: {
+		event_general: {
+			event_name: "event_general",
+			data: {
+				data: 1,
+			}
+		}
+	},
+	clientCanHandles: {
+        event_general: {
+			event_name: "event_general",
+			data: {
+				data: 1,
+			}
+		}
+	}
+}
+
+// <client_declaration>
+
+
+export type ClientEvents = typeof client['clientCanHandles']
+export type ClientEventKeys = keyof ClientEvents
+
+export type ServerEvents = typeof client['clientCanEmits']
+export type ServerEventKeys = keyof ServerEvents
+
+/** Pesan harus memenuhi standard */
+type MessageType = {
+    event_name: ClientEventKeys
+    data: ClientEvents[ClientEventKeys]["data"]
+}
+
+export type Listener = {
+    listener_id: string
+    fn: (data: ClientEvents[ClientEventKeys]["data"]) => any
+}
+
+class Boston {
+    private wsUri: string | URL
+    private connection: WebSocket
+    private listeners: Partial<Record<ClientEventKeys, Array<Listener>>>
+
+    constructor(wsUri: string | URL) {
+        console.log("🚀 Boston client initialized, instance ID:", nanoid())
+
+        this.listeners = {}
+        this.wsUri = wsUri
+        this.connection = new WebSocket(this.wsUri)
+
+        this.connection.onmessage = (e: MessageEvent<string>) => {
+            const { data } = e
+            const msg = this.parseResponse(data)
+            
+            if (msg) {
+                if (this.listeners[msg.event_name]) {
+                    this.listeners[msg.event_name]!.forEach(listener => {
+                        listener.fn(msg.data)
+                    })
+                }
+            }
+        }
+
+        this.connection.onerror = (e) => {
+          console.error("🔥 Boston client error:", e)
+        }
+    }
+
+    private parseResponse(s: string): MessageType | null {
+      try {
+        const raw = JSON.parse(s)
+        const data: MessageType = {
+            data: JSON.parse(raw.data),
+            event_name: raw.event_name
+        } 
+        return data
+      } catch (e) {
+        console.warn("Boston parser error:", e)
+        return null
+      }
+    }
+
+    addListener<N extends ClientEventKeys>(id: string, event_name: N, fn: (data: ClientEvents[N]["data"]) => any): void {
+        if (!this.listeners[event_name]) this.listeners[event_name] = []
+        if (this.listeners[event_name]!.filter(listener => listener.listener_id === id).length > 0) return
+
+        this.listeners[event_name]!.push({
+            listener_id: id,
+            fn,
+        })
+    }
+
+    removeListener<N extends ClientEventKeys>(id: string, event_name: N): void {
+        if (!this.listeners[event_name]) return
+        this.listeners[event_name] = this.listeners[event_name]!.filter(li => li.listener_id !== id)
+    }
+
+    send<E extends ServerEventKeys>(event_name: E, data: Combination<ServerEvents[E]["data"]>) {
+        const msg = {
+            event_name,
+            data: JSON.stringify(data),
+        } 
+
+        this.connection.send(JSON.stringify(msg))
+    }
+}
+
+export const SocketContext = createContext<Boston>({} as Boston);
+
+export const useBoston = () => {
+    const boston = useContext(SocketContext);
+
+	const componentID = nanoid(7);
+
+	function listen<K extends ClientEventKeys>(
+		event_name: K,
+		fn: (data: ClientEvents[K]["data"]) => void
+	) {
+		boston.addListener(componentID, event_name, fn);
+
+		return () => {
+			boston.removeListener(componentID, event_name);
+		};
+	}
+
+	function send<K extends ServerEventKeys>(
+		event_name: K,
+		data: Combination<ServerEvents[K]["data"]>
+	) {
+		boston.send(event_name, data);
+	}
+
+	return { listen, send };
+};
+
+
+
+
+export function createSocketClient(uri: string): Boston {
+    const uridata = new URL(uri);
+    const boston = new Boston(uridata);
+    return boston;
+}
+
+

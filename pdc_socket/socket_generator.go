@@ -1,11 +1,10 @@
-package v2_gots_sdk
+package pdc_socket
 
 import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pdcgo/common_conf/pdc_common"
@@ -17,68 +16,63 @@ type EventIface interface {
 	KeyEvent() string
 }
 
+type EventDeclare struct {
+	Event    EventIface
+	CanEmits []EventIface
+}
+
 type EventMessage struct {
-	EventKey string `json:"event_key"`
-	Body     []byte `json:"body"`
+	EventName string `json:"event_name"`
+	Data      string `json:"data"`
 }
 
 func (event *EventMessage) BindJSON(data interface{}) error {
-	return json.Unmarshal(event.Body, data)
+	return json.Unmarshal([]byte(event.Data), data)
 }
 
 type SocketHandler func(event *EventMessage, client *SocketClient)
+type TsConvertHandler func(event *EventDeclare) error
 
 type SocketGenerator struct {
-	toSocketSdk    func(event EventIface)
-	HandlerData    map[string][]SocketHandler
-	Model          *typescriptify.TypeScriptify
-	PoolConnection *SocketClientPool
+	Convert         TsConvertHandler
+	HandlerData     map[string][]SocketHandler
+	HandlerDataLock sync.Mutex
+	Model           *typescriptify.TypeScriptify
+	PoolConnection  *SocketClientPool
 }
 
+// generate socket sdk generator
 func NewSocketGenerator() *SocketGenerator {
-
-	model := typescriptify.New()
-	model.CreateInterface = true
-	model.CreateConstructor = false
 
 	pool := NewSocketClientPool()
 
 	socket := SocketGenerator{
-		toSocketSdk:    func(event EventIface) {},
+		Convert:        func(event *EventDeclare) error { return nil },
 		HandlerData:    map[string][]SocketHandler{},
-		Model:          model,
 		PoolConnection: pool,
 	}
 	return &socket
 }
 
-func (sdk *SocketGenerator) GenerateSocketSdkFunc(fname string) (createSdkJs func()) {
+// untuk register event handler di sdk
+func (socket *SocketGenerator) Register(declare *EventDeclare, handler ...SocketHandler) {
+	socket.HandlerDataLock.Lock()
+	defer socket.HandlerDataLock.Unlock()
 
-	funcscripts := []string{}
+	socket.Convert(declare)
+	event := declare.Event
 
-	sdk.toSocketSdk = func(event EventIface) {
-		funcscripts = append(funcscripts, CreateTsSocketEvent(sdk.Model, event))
+	keyevent := event.KeyEvent()
+
+	oldhandler := []SocketHandler{}
+	if socket.HandlerData[keyevent] != nil {
+		oldhandler = socket.HandlerData[keyevent]
 	}
+	socket.HandlerData[keyevent] = append(oldhandler, handler...)
 
-	return func() {
-		basepath := filepath.Join(fname)
-		os.Remove(basepath)
-
-		f, err := os.OpenFile(basepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer f.Close()
-
-		sdk.CreateRootTypeSocket(f, funcscripts)
-	}
 }
 
-func (socket *SocketGenerator) Register(event EventIface, handler ...SocketHandler) {
-	socket.toSocketSdk(event)
-	socket.HandlerData[event.KeyEvent()] = handler
-}
-
+// untuk handler ke gin
 func (socket *SocketGenerator) GinHandler(c *gin.Context) {
 	conn, wsErr := websocket.Accept(c.Writer, c.Request, &websocket.AcceptOptions{
 		InsecureSkipVerify: true,
@@ -106,7 +100,7 @@ Parent:
 
 			json.Unmarshal(data, &event)
 
-			handlers := socket.HandlerData[event.EventKey]
+			handlers := socket.HandlerData[event.EventName]
 			for _, handler := range handlers {
 				handler(&event, client)
 			}
@@ -124,16 +118,3 @@ Parent:
 	}
 
 }
-
-// type ConnectedSocket struct {
-// }
-
-// func NewSocketGenerator() *SocketGenerator {
-// 	socket := &SocketGenerator{}
-
-// 	socket.Register("asdasd", func(event *ConnectedSocket) {
-
-// 	})
-
-// 	return socket
-// }

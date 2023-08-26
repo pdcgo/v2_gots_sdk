@@ -1,4 +1,4 @@
-package v2_gots_sdk
+package pdc_socket
 
 import (
 	"context"
@@ -28,8 +28,8 @@ func (sock *SocketClient) Emit(data EventIface) {
 	}
 
 	eventdata := EventMessage{
-		EventKey: data.KeyEvent(),
-		Body:     jsondata,
+		EventName: data.KeyEvent(),
+		Data:      string(jsondata),
 	}
 
 	dataevent, err := json.Marshal(&eventdata)

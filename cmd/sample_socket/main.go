@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pdcgo/v2_gots_sdk"
+	"github.com/pdcgo/v2_gots_sdk/pdc_socket"
 )
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -47,15 +47,24 @@ type BroadcastName struct {
 }
 
 func (d *BroadcastName) KeyEvent() string {
-	return "broadcast_data"
+	return "broadcast_name"
 }
 
-func createSocket() *v2_gots_sdk.SocketGenerator {
-	socket := v2_gots_sdk.NewSocketGenerator()
-	save := socket.GenerateSocketSdkFunc("samples_frontend/src/socketsdk.ts")
+func createSocket() *pdc_socket.SocketGenerator {
+
+	socket := pdc_socket.NewSocketGenerator()
+	save, err := socket.GenerateSocketSdkFunc("samples_frontend/src/socketsdk.ts")
+
+	if err != nil {
+		panic(err)
+	}
 	defer save()
-	socket.Register(&PongTest{})
-	socket.Register(&BroadcastName{})
+	socket.Register(&pdc_socket.EventDeclare{
+		Event: &PongTest{},
+	})
+	socket.Register(&pdc_socket.EventDeclare{
+		Event: &BroadcastName{},
+	})
 
 	count := 0
 	namereasons := []string{
@@ -68,7 +77,25 @@ func createSocket() *v2_gots_sdk.SocketGenerator {
 		"hello world",
 	}
 
-	socket.Register(&PingTest{}, func(event *v2_gots_sdk.EventMessage, client *v2_gots_sdk.SocketClient) {
+	// go func() {
+	// 	tick := time.NewTicker(time.Second * 3)
+
+	// 	for {
+	// 		<-tick.C
+	// 		ind := rand.Intn(len(namereasons))
+	// 		socket.PoolConnection.Broadcast(&BroadcastName{
+	// 			Name: namereasons[ind],
+	// 		})
+	// 	}
+
+	// }()
+
+	socket.Register(&pdc_socket.EventDeclare{
+		Event: &PingTest{},
+		CanEmits: []pdc_socket.EventIface{
+			&BroadcastName{},
+		},
+	}, func(event *pdc_socket.EventMessage, client *pdc_socket.SocketClient) {
 		var msg PingTest
 
 		event.BindJSON(&msg)
@@ -82,7 +109,7 @@ func createSocket() *v2_gots_sdk.SocketGenerator {
 		}
 
 		ind := rand.Intn(len(namereasons))
-		client.Broadcast(&BroadcastName{
+		client.Emit(&BroadcastName{
 			Name: namereasons[ind],
 		})
 	})
