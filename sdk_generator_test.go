@@ -6,10 +6,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pdcgo/v2_gots_sdk"
+	"github.com/pdcgo/v2_gots_sdk/pdc_api"
+	"github.com/stretchr/testify/assert"
 )
 
 type PayloadDataDD struct {
-	Name string
+	Name string `json:"name"`
 }
 
 type ResponseData struct {
@@ -19,9 +21,10 @@ type ResponseData struct {
 func TestCreateSDK(t *testing.T) {
 	sdk := v2_gots_sdk.NewApiSdk(gin.Default())
 
-	save := sdk.GenerateSdkFunc("sdk.ts", true)
+	save, err := sdk.GenerateSdkFunc("sdk.ts")
+	assert.Nil(t, err)
 
-	sdk.Register(&v2_gots_sdk.Api{
+	sdk.Register(&pdc_api.Api{
 		Payload:      PayloadDataDD{},
 		Method:       http.MethodPost,
 		RelativePath: "/users",
@@ -30,21 +33,21 @@ func TestCreateSDK(t *testing.T) {
 	})
 
 	datag := sdk.Group("/data")
-	datag.Register(&v2_gots_sdk.Api{
+	datag.Register(&pdc_api.Api{
 		Method: http.MethodGet,
 	}, func(ctx *gin.Context) {
 
 	})
 
 	usrg := datag.Group("/user")
-	usrg.Register(&v2_gots_sdk.Api{
+	usrg.Register(&pdc_api.Api{
 		Method:       http.MethodPost,
 		RelativePath: "create",
 		Response:     ResponseData{},
 	}, func(ctx *gin.Context) {})
 
 	sdk.RegisterGroup("/product", func(group *gin.RouterGroup, register v2_gots_sdk.RegisterFunc) {
-		register(&v2_gots_sdk.Api{
+		register(&pdc_api.Api{
 			Payload:      PayloadDataDD{},
 			Method:       http.MethodPost,
 			RelativePath: "/create",
@@ -52,7 +55,7 @@ func TestCreateSDK(t *testing.T) {
 	})
 
 	sdk.RegisterGroup("/product_data", func(group *gin.RouterGroup, register v2_gots_sdk.RegisterFunc) {
-		register(&v2_gots_sdk.Api{
+		register(&pdc_api.Api{
 			Payload:      []*PayloadDataDD{},
 			Method:       http.MethodPost,
 			Response:     []string{},

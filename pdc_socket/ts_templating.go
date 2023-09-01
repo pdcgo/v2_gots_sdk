@@ -96,7 +96,7 @@ func (root *RootVariable) Save() error {
 	return nil
 }
 
-func (root *RootVariable) CreateEventDeclaration(event EventIface, level int) (string, error) {
+func (root *RootVariable) CreateEventDeclaration(event EventIface) (string, error) {
 	value, _, err := root.gen.GenerateFromStruct(event, 0)
 	objectts := js_generator.ObjectTs{}
 	objectts = append(objectts, &js_generator.ObjectTsItem{
@@ -118,7 +118,6 @@ func (root *RootVariable) CreateEventDeclaration(event EventIface, level int) (s
 
 func (root *RootVariable) Register(event *EventDeclare) error {
 	newCanEmit := js_generator.ObjectTs{}
-	level := 1
 
 	for _, ev := range root.ClientCanHandles {
 		found := false
@@ -134,7 +133,7 @@ func (root *RootVariable) Register(event *EventDeclare) error {
 	}
 
 	for _, ev := range event.CanEmits {
-		value, err := root.CreateEventDeclaration(ev, level)
+		value, err := root.CreateEventDeclaration(ev)
 		if err != nil {
 			return err
 		}
@@ -150,7 +149,7 @@ func (root *RootVariable) Register(event *EventDeclare) error {
 
 	// registering event
 	ev := event.Event
-	value, err := root.CreateEventDeclaration(ev, level)
+	value, err := root.CreateEventDeclaration(ev)
 	if err != nil {
 		return err
 	}

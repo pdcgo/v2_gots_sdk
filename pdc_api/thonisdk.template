@@ -1,0 +1,107 @@
+import axios from "axios";
+import { useState } from "react";
+
+export class Uint extends Number {}
+export class Int extends Number {}
+export class Float32 extends Number {}
+export class Float64 extends Number {}
+
+export type MaybeUndefined<T> = T | undefined;
+export type MaybeNull<T> = T | null;
+
+// <client_declaration>
+
+const clients = {
+    GET_ACCOUNTS: {
+        url: "/account" as const,
+        method: "GET" as const,
+        query: {
+            page: 0 as Uint,
+            limit: 0
+        },
+        response: [
+            {
+                id: 0,
+                username: "",
+                photo: "" as MaybeNull<string>
+            }
+        ]
+    },
+    GET_PERMISSION: {
+        url: "/perm" as const,
+        method: "GET" as const,
+        query: null,
+        response: {
+            canAccess: false as MaybeUndefined<boolean>
+        }
+    }
+};
+
+// <client_declaration>
+
+export type Fn<T> = (a: T) => void;
+
+export type SendOptions<Data, Query, Err = Error> = {
+    onSuccess?: Fn<Data>;
+    onError?: Fn<Err>;
+    query?: Query;
+};
+
+export type ClientReturn<Data, Query, Err = Error> = {
+    pending: boolean;
+    data: MaybeNull<Data>;
+    error: MaybeNull<Err>;
+    send: Fn<SendOptions<Data, Query, Err>>;
+};
+
+export type Clients = typeof clients;
+export type Target = keyof Clients;
+
+export function useQuery<
+    K extends Target,
+    R extends Clients[K]["response"],
+    Q extends Clients[K]["query"]
+>(action: K, options?: SendOptions<R, Q> | null): ClientReturn<R, Q> {
+    const uri = clients[action].url;
+    const method = clients[action].method;
+    const queryOptions = options;
+
+    const [pending, setPending] = useState(false);
+    const [data, setData] = useState<MaybeNull<R>>(null);
+    const [error, setError] = useState<MaybeNull<Error>>(null);
+
+    async function send(options: SendOptions<R, Q> | undefined = queryOptions) {
+        setPending(true);
+
+        const query = options?.query;
+
+        try {
+            const { data } = await axios({
+                method,
+                url: uri,
+                ...(query
+                    ? {
+                          params: query
+                      }
+                    : {})
+            });
+
+            options?.onSuccess?.(data);
+            setData(data);
+            setError(null);
+        } catch (e) {
+            options?.onError?.(e as any);
+            setError(e as any);
+            setData(null);
+        } finally {
+            setPending(false);
+        }
+    }
+
+    return {
+        data,
+        error,
+        pending,
+        send
+    };
+}

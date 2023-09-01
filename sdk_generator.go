@@ -1,17 +1,14 @@
 package v2_gots_sdk
 
 import (
-	"log"
 	"net/url"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pdcgo/v2_gots_sdk/pdc_api"
 	"github.com/tkrajina/typescriptify-golang-structs/typescriptify"
 )
 
-type AddSdkFunc func(api *Api)
+type AddSdkFunc func(api *pdc_api.Api)
 
 type ApiSdk struct {
 	R     *gin.Engine
@@ -19,60 +16,31 @@ type ApiSdk struct {
 	toSdk AddSdkFunc
 }
 
-func (sdk *ApiSdk) GenerateToni(f *os.File, funcscripts []string) {
-	f.WriteString("/* eslint-disable @typescript-eslint/no-explicit-any */\n\n")
+func (sdk *ApiSdk) GenerateSdkFunc(fname string) (createSdkJs func(), err error) {
 
-	model, _ := sdk.Model.Convert(map[string]string{})
-	f.WriteString(model)
-	f.WriteString("\n")
-	f.WriteString("export type SdkConfig = { \n")
-	f.WriteString(strings.Join(funcscripts, ",\n"))
-	f.WriteString("\n}\n")
-}
+	template, err := pdc_api.NewV2SdkTemplating(fname)
 
-func (sdk *ApiSdk) GenerateStandar(f *os.File, funcscripts []string) {
-	model, _ := sdk.Model.Convert(map[string]string{})
+	if err != nil {
+		return createSdkJs, err
+	}
 
-	f.WriteString(templateImportHead)
-	f.WriteString("\n\n")
-	f.WriteString(model)
-	f.WriteString("\n")
-	f.WriteString(templateClassApi)
-	f.WriteString("\n")
-	f.WriteString(strings.Join(funcscripts, "\n"))
+	sdk.toSdk = func(api *pdc_api.Api) {
+		err := template.Register(api)
+		if err != nil {
+			panic(err)
+		}
 
-}
-
-func (sdk *ApiSdk) GenerateSdkFunc(fname string, tonimode bool) (createSdkJs func()) {
-
-	funcscripts := []string{}
-
-	sdk.toSdk = func(api *Api) {
-		funcscripts = append(funcscripts, api.GenerateTs(sdk.Model, tonimode))
 	}
 
 	return func() {
-		basepath := filepath.Join(fname)
-		os.Remove(basepath)
-
-		f, err := os.OpenFile(basepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer f.Close()
-
-		if tonimode {
-			sdk.GenerateToni(f, funcscripts)
-		} else {
-			sdk.GenerateStandar(f, funcscripts)
-		}
-	}
+		template.Save()
+	}, nil
 
 }
 
-type RegisterFunc func(api *Api, handlers ...gin.HandlerFunc) gin.IRoutes
+type RegisterFunc func(api *pdc_api.Api, handlers ...gin.HandlerFunc) gin.IRoutes
 
-func (sdk *ApiSdk) Register(api *Api, handlers ...gin.HandlerFunc) gin.IRoutes {
+func (sdk *ApiSdk) Register(api *pdc_api.Api, handlers ...gin.HandlerFunc) gin.IRoutes {
 	sdk.toSdk(api)
 
 	return sdk.R.Handle(api.Method, api.RelativePath, handlers...)
@@ -84,7 +52,7 @@ type SdkGroup struct {
 	Basepath string
 }
 
-func (grp *SdkGroup) Register(api *Api, handlers ...gin.HandlerFunc) gin.IRoutes {
+func (grp *SdkGroup) Register(api *pdc_api.Api, handlers ...gin.HandlerFunc) gin.IRoutes {
 	api.GroupPath = grp.Basepath
 	grp.sdk.toSdk(api)
 	return grp.G.Handle(api.Method, api.RelativePath, handlers...)
@@ -114,7 +82,7 @@ func (sdk *ApiSdk) Group(relativePath string) *SdkGroup {
 func (sdk *ApiSdk) RegisterGroup(relativePath string, groupHandler func(group *gin.RouterGroup, register RegisterFunc)) {
 	r := sdk.R.Group(relativePath)
 
-	var registfn RegisterFunc = func(api *Api, handlers ...gin.HandlerFunc) gin.IRoutes {
+	var registfn RegisterFunc = func(api *pdc_api.Api, handlers ...gin.HandlerFunc) gin.IRoutes {
 		api.GroupPath = relativePath
 
 		sdk.toSdk(api)
@@ -127,7 +95,7 @@ func (sdk *ApiSdk) RegisterGroup(relativePath string, groupHandler func(group *g
 func NewApiSdk(r *gin.Engine) *ApiSdk {
 	sdk := &ApiSdk{
 		Model: typescriptify.New(),
-		toSdk: func(api *Api) {},
+		toSdk: func(api *pdc_api.Api) {},
 		R:     r,
 	}
 	sdk.Model.CreateInterface = true

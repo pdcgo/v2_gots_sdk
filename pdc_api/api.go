@@ -1,4 +1,4 @@
-package v2_gots_sdk
+package pdc_api
 
 import (
 	"log"
@@ -10,37 +10,6 @@ import (
 	"github.com/iancoleman/strcase"
 	"github.com/tkrajina/typescriptify-golang-structs/typescriptify"
 )
-
-var templateFunc = `
-export async function #FuncName#(query: #Query#): Promise<#Response#> {
-    let res = await clientSdk.client.Method<any, AxiosResponse<#Response#, any>, any>('#Url#', {
-        params: query,
-    });
-    return res.data;
-}
-`
-
-var templateFuncWithBody = `
-export async function #FuncName#(query: #Query#, data: #Payload#): Promise<#Response#> {
-    let res = await clientSdk.client.Method<any, AxiosResponse<#Response#, any>, #Payload#>('#Url#', data, {
-        params: query,
-    });
-    return res.data;
-}
-`
-
-var templateImportHead = `import { AxiosInstance, AxiosResponse } from "axios";`
-var templateClassApi = `
-class ClientSdk {
-    client!: AxiosInstance
-
-}
-const clientSdk = new ClientSdk()
-
-export function SetClient(client: AxiosInstance) {
-    clientSdk.client = client
-}
-`
 
 type Api struct {
 	Method       string
@@ -88,41 +57,6 @@ func (api *Api) replaceFuncName(template string, relative bool) string {
 	}
 
 	template = strings.ReplaceAll(template, "#FuncName#", fnname)
-
-	return template
-}
-
-func (api *Api) GenerateTs(generator *typescriptify.TypeScriptify, tonimode bool) string {
-	if tonimode {
-		return api.GenerateTsToni(generator)
-	}
-
-	var template string
-
-	if api.Payload != nil {
-		template = templateFuncWithBody
-	} else {
-		template = templateFunc
-	}
-
-	template = strings.ReplaceAll(template, "Method", strings.ToLower(api.Method))
-	template = strings.ReplaceAll(template, "#Query#", getStructName(generator, api.Query, false))
-	template = strings.ReplaceAll(template, "#Response#", getStructName(generator, api.Response, false))
-	template = strings.ReplaceAll(template, "#Payload#", getStructName(generator, api.Payload, false))
-
-	template = api.replaceFuncName(template, false)
-
-	return template
-}
-
-func (api *Api) GenerateTsToni(generator *typescriptify.TypeScriptify) string {
-	template := toniTemplate
-	template = strings.ReplaceAll(template, "Method", strings.ToLower(api.Method))
-	template = strings.ReplaceAll(template, "#Query#", getStructName(generator, api.Query, true))
-	template = strings.ReplaceAll(template, "#Response#", getStructName(generator, api.Response, true))
-	template = strings.ReplaceAll(template, "#Payload#", getStructName(generator, api.Payload, true))
-
-	template = api.replaceFuncName(template, true)
 
 	return template
 }
