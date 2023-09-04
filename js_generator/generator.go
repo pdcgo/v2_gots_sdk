@@ -282,8 +282,13 @@ func (obj InterfaceTs) GenerateTs() string {
 	hasil := []string{
 		"{",
 	}
-
+	mapunique := map[string]bool{}
 	for _, data := range obj {
+		if mapunique[data.Key] {
+			continue
+		} else {
+			mapunique[data.Key] = true
+		}
 		hasil = append(hasil, "\t"+data.Key+": "+data.Val)
 	}
 
@@ -312,6 +317,7 @@ func (obj *ObjectTsItem) GetLevel() string {
 type ObjectTs []*ObjectTsItem
 
 func (obj ObjectTs) GenerateTs(level int) string {
+
 	tabstring := ""
 	if level == 0 {
 		tabstring = ""
@@ -321,7 +327,14 @@ func (obj ObjectTs) GenerateTs(level int) string {
 	}
 
 	hasil := []string{}
+	mapunique := map[string]bool{}
 	for _, data := range obj {
+		if mapunique[data.Key] {
+			continue
+		} else {
+			mapunique[data.Key] = true
+		}
+
 		suffix := data.Suffix
 		if suffix != "" {
 			suffix = " " + suffix

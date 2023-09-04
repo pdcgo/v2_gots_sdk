@@ -14,6 +14,7 @@ type BaseCC struct {
 
 type BaseCCd struct {
 	Named string `json:"named"`
+	Name  string `json:"name"`
 }
 
 type Categories struct {
