@@ -98,7 +98,7 @@ func (socket *SocketGenerator) GinHandler(c *gin.Context) {
 	event := &ConnectedEvent{}
 	handlers := socket.HandlerData[event.EventName]
 	for _, handler := range handlers {
-		handler(&event, client)
+		handler(event.EventMessage, client)
 	}
 
 Parent:

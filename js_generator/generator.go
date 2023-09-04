@@ -8,14 +8,19 @@ import (
 	"strings"
 )
 
+type CacheModel struct {
+	name  string
+	value string
+}
+
 type JsGenerator struct {
-	Models map[string]string
+	Models map[string]*CacheModel
 	Writer io.StringWriter
 }
 
 func NewJsGenerator(writer io.StringWriter) (*JsGenerator, error) {
 	gen := JsGenerator{
-		Models: map[string]string{},
+		Models: map[string]*CacheModel{},
 		Writer: writer,
 	}
 
@@ -104,7 +109,10 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 			val := reflect.Zero(tipes.Elem()).Interface()
 			valuestr, tipe, err := gen.GenerateFromStruct(val, level)
 			tipe = tipe + " | undefined"
-			return valuestr + " as " + tipe, tipe, err
+			if valuestr != "" {
+				valuestr = valuestr + " as " + tipe
+			}
+			return valuestr, tipe, err
 		}
 
 		valuedata := value.Interface()
@@ -114,7 +122,10 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 
 		valuestr, tipe, err := gen.GenerateFromStruct(valuedata, level)
 		tipe = tipe + " | undefined"
-		return valuestr + " as " + tipe, tipe, err
+		if valuestr != "" {
+			valuestr = valuestr + " as " + tipe
+		}
+		return valuestr, tipe, err
 
 	case reflect.Slice:
 		arrayValue := ArrayTs{}
@@ -146,9 +157,22 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 
 		// value, err := GenerateFromStruct(val)
 		// data = append(data, value)
-		return arrayValue.GenerateTs(level), "Array<" + tipeArray + ">", nil
+
+		tipeArray = "Array<" + tipeArray + ">"
+
+		return arrayValue.GenerateTs(level) + " as " + tipeArray, tipeArray, nil
 
 	case reflect.Struct:
+		name := tipes.Name()
+		importObject := gen.Models[name]
+
+		if importObject != nil {
+			return importObject.value, importObject.name, nil
+		} else {
+			gen.Models[name] = &CacheModel{
+				name: name,
+			}
+		}
 
 		objectVal := ObjectTs{}
 		objectType := InterfaceTs{}
@@ -161,9 +185,15 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 			if key == "" {
 				continue
 			}
+			val := values.Field(c)
+
+			fieldname := val.Type().Name()
+			if gen.Models[fieldname] != nil {
+				return "", name, nil
+			}
 
 			// getting value
-			val := values.Field(c)
+
 			valstr, tipestr, err := gen.GenerateFromStruct(val.Interface(), 0)
 			if err != nil {
 				return "", objectType.GenerateTs(), err
@@ -179,14 +209,14 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 			})
 		}
 
-		name := tipes.Name()
-		importObject := gen.Models[name]
-		if importObject == "" {
-			importObject = objectType.GenerateTs()
-			gen.Models[name] = importObject
-			gen.Writer.WriteString("export interface " + name + " " + importObject + "\n\n")
+		importObject = &CacheModel{
+			name:  name,
+			value: objectVal.GenerateTs(level),
 		}
-		return objectVal.GenerateTs(level), name, nil
+		gen.Models[name] = importObject
+		tipestr := objectType.GenerateTs()
+		gen.Writer.WriteString("export interface " + name + " " + tipestr + "\n\n")
+		return importObject.value, name, nil
 
 	}
 
@@ -277,6 +307,9 @@ func (arr ArrayTs) GenerateTs(level int) string {
 	}
 
 	for _, val := range arr {
+		if val == "" {
+			continue
+		}
 		tabs := strings.Join(make([]string, level), "\t")
 		hasil = append(hasil, tabs+val)
 	}

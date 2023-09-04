@@ -5,14 +5,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pdcgo/v2_gots_sdk/pdc_api"
-	"github.com/tkrajina/typescriptify-golang-structs/typescriptify"
 )
 
 type AddSdkFunc func(api *pdc_api.Api)
 
 type ApiSdk struct {
 	R     *gin.Engine
-	Model *typescriptify.TypeScriptify
 	toSdk AddSdkFunc
 }
 
@@ -94,11 +92,8 @@ func (sdk *ApiSdk) RegisterGroup(relativePath string, groupHandler func(group *g
 
 func NewApiSdk(r *gin.Engine) *ApiSdk {
 	sdk := &ApiSdk{
-		Model: typescriptify.New(),
 		toSdk: func(api *pdc_api.Api) {},
 		R:     r,
 	}
-	sdk.Model.CreateInterface = true
-	sdk.Model.CreateConstructor = false
 	return sdk
 }
