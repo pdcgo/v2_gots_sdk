@@ -185,6 +185,10 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 			if key == "" {
 				continue
 			}
+
+			keys := strings.Split(key, ",")
+			key = keys[0]
+
 			val := values.Field(c)
 
 			fieldname := val.Type().Name()
