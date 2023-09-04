@@ -26,6 +26,10 @@ type EventMessage struct {
 	Data      string `json:"data"`
 }
 
+type ConnectedEvent struct {
+	*EventMessage
+}
+
 func (event *EventMessage) BindJSON(data interface{}) error {
 	return json.Unmarshal([]byte(event.Data), data)
 }
@@ -89,6 +93,13 @@ func (socket *SocketGenerator) GinHandler(c *gin.Context) {
 	defer disconnect()
 
 	ctx := client.Ctx
+
+	// trigger connected event
+	event := &ConnectedEvent{}
+	handlers := socket.HandlerData[event.EventName]
+	for _, handler := range handlers {
+		handler(&event, client)
+	}
 
 Parent:
 	for {
