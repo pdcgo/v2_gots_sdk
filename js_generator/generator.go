@@ -111,7 +111,12 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 
 	switch tipes.Kind() {
 	case reflect.String:
-		return "`" + values.Interface().(string) + "`", "string", nil
+		dd := values.Interface()
+		cc, ok := dd.(string)
+		if !ok {
+			return "``", "string", nil
+		}
+		return "`" + cc + "`", "string", nil
 
 	case reflect.Bool:
 		dat := values.Interface().(bool)

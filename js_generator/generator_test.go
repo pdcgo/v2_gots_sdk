@@ -8,8 +8,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type Status string
+
+const (
+	Tstatus Status = "astes"
+)
+
 type BaseCC struct {
 	Name string `json:"name"`
+	DD   Status `json:"dd"`
 }
 
 type BaseCCd struct {
@@ -37,7 +44,13 @@ func TestGenerator(t *testing.T) {
 	gen, err := js_generator.NewJsGenerator(buf)
 	assert.Nil(t, err)
 
-	value, tipe, err := gen.GenerateFromStruct(Res{}, 0)
+	value, tipe, err := gen.GenerateFromStruct(Res{
+		Categories: CategoriesData{
+			&Categories{
+				BaseCCd: BaseCCd{Named: string(Tstatus)},
+			},
+		},
+	}, 0)
 
 	assert.Nil(t, err)
 
