@@ -64,6 +64,12 @@ func (root *V2SdkTemplating) AddApi(apispec *Api) (string, error) {
 		Suffix: "as const",
 	})
 
+	objectts = append(objectts, &js_generator.ObjectTsItem{
+		Key:    "method",
+		Val:    `"` + apispec.Method + `"`,
+		Suffix: "as const",
+	})
+
 	if apispec.Query != nil {
 		value, _, err := root.gen.GenerateFromStruct(apispec.Query, level)
 		value = strings.TrimSuffix(value, "| undefined")
@@ -73,6 +79,11 @@ func (root *V2SdkTemplating) AddApi(apispec *Api) (string, error) {
 		objectts = append(objectts, &js_generator.ObjectTsItem{
 			Key: "query",
 			Val: value,
+		})
+	} else {
+		objectts = append(objectts, &js_generator.ObjectTsItem{
+			Key: "query",
+			Val: "undefined",
 		})
 	}
 
@@ -85,6 +96,11 @@ func (root *V2SdkTemplating) AddApi(apispec *Api) (string, error) {
 		objectts = append(objectts, &js_generator.ObjectTsItem{
 			Key: "body",
 			Val: value,
+		})
+	} else {
+		objectts = append(objectts, &js_generator.ObjectTsItem{
+			Key: "body",
+			Val: "{}",
 		})
 	}
 
