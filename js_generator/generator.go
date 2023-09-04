@@ -27,6 +27,82 @@ func NewJsGenerator(writer io.StringWriter) (*JsGenerator, error) {
 	return &gen, nil
 }
 
+func (gen *JsGenerator) IterateFieldStruct(data interface{}) (ObjectTs, InterfaceTs, error) {
+	tipes := reflect.TypeOf(data)
+	values := reflect.ValueOf(data)
+
+	objectVal := ObjectTs{}
+	objectType := InterfaceTs{}
+
+	for c := 0; c < tipes.NumField(); c++ {
+
+		tipe := tipes.Field(c)
+		val := values.Field(c)
+
+		if tipe.Anonymous {
+			var anonim any
+
+			if tipe.Type.Kind() == reflect.Pointer {
+				isNil := val.IsNil()
+				elem := tipe.Type.Elem()
+				val = reflect.Indirect(val)
+
+				if isNil {
+					anonim = reflect.Zero(elem).Interface()
+				} else {
+					anonim = val.Interface()
+				}
+
+			} else {
+				anonim = val.Interface()
+			}
+
+			aobj, atipe, err := gen.IterateFieldStruct(anonim)
+
+			if err != nil {
+				return objectVal, objectType, err
+			}
+
+			objectVal = append(objectVal, aobj...)
+			objectType = append(objectType, atipe...)
+
+		}
+
+		key := tipe.Tag.Get("json")
+		if key == "" {
+			continue
+		}
+
+		keys := strings.Split(key, ",")
+		key = keys[0]
+
+		fieldname := val.Type().Name()
+		if gen.Models[fieldname] != nil {
+			return objectVal, objectType, nil
+		}
+
+		// getting value
+		valstr, tipestr, err := gen.GenerateFromStruct(val.Interface(), 0)
+		if err != nil {
+			return objectVal, objectType, nil
+		}
+
+		item := ObjectTsItem{
+			Val: valstr,
+			Key: key,
+		}
+
+		objectVal = append(objectVal, &item)
+		objectType = append(objectType, InterfaceTsItem{
+			Key: key,
+			Val: tipestr,
+		})
+	}
+
+	return objectVal, objectType, nil
+
+}
+
 func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string, string, error) {
 	level += 1
 
@@ -174,43 +250,10 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 			}
 		}
 
-		objectVal := ObjectTs{}
-		objectType := InterfaceTs{}
+		objectVal, objectType, err := gen.IterateFieldStruct(data)
 
-		for c := 0; c < tipes.NumField(); c++ {
-			item := ObjectTsItem{}
-
-			tipe := tipes.Field(c)
-			key := tipe.Tag.Get("json")
-			if key == "" {
-				continue
-			}
-
-			keys := strings.Split(key, ",")
-			key = keys[0]
-
-			val := values.Field(c)
-
-			fieldname := val.Type().Name()
-			if gen.Models[fieldname] != nil {
-				return "", name, nil
-			}
-
-			// getting value
-
-			valstr, tipestr, err := gen.GenerateFromStruct(val.Interface(), 0)
-			if err != nil {
-				return "", objectType.GenerateTs(), err
-			}
-
-			item.Val = valstr
-			item.Key = key
-
-			objectVal = append(objectVal, &item)
-			objectType = append(objectType, InterfaceTsItem{
-				Key: key,
-				Val: tipestr,
-			})
+		if err != nil {
+			return "", "", err
 		}
 
 		importObject = &CacheModel{

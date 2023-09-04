@@ -8,7 +8,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type BaseCC struct {
+	Name string `json:"name"`
+}
+
+type BaseCCd struct {
+	Named string `json:"named"`
+}
+
 type Categories struct {
+	*BaseCC
+	BaseCCd
 	ErrMsg string        `json:"err_msg"`
 	Child  []*Categories `json:"child"`
 }
