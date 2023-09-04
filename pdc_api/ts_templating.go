@@ -47,7 +47,7 @@ func (root *V2SdkTemplating) Save() error {
 	defer root.CloseFunc()
 
 	root.gen.Writer.WriteString("\n\n")
-	root.gen.Writer.WriteString("export const client = ")
+	root.gen.Writer.WriteString("export const clients = ")
 	root.gen.Writer.WriteString(root.Apis.GenerateTs(1))
 
 	return nil
