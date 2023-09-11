@@ -9,7 +9,7 @@ import (
 	"github.com/pdcgo/v2_gots_sdk/js_generator"
 )
 
-//go:embed .\thonisdk.template
+//go:embed thonisdk.template
 var sdkTemplate []byte
 
 type V2SdkTemplating struct {
