@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import axios from "axios";
 import { useState } from "react";
 
@@ -61,7 +63,7 @@ export function useQuery<
     K extends Target,
     R extends Clients[K]["response"],
     Q extends Clients[K]["query"]
->(action: K, options?: SendOptions<R, Q> | null): ClientReturn<R, Q> {
+>(action: K, options?: SendOptions<R, Q>): ClientReturn<R, Q> {
     const uri = clients[action].url;
     const method = clients[action].method;
     const queryOptions = options;
