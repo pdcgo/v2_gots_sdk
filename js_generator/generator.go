@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type CacheModel struct {
@@ -244,6 +245,11 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 		return arrayValue.GenerateTs(level) + " as " + tipeArray, tipeArray, nil
 
 	case reflect.Struct:
+		switch data.(type) {
+		case time.Time:
+			return "`2021-12-01T07:00:00+07:00`", "string", nil
+		}
+
 		name := tipes.Name()
 		importObject := gen.Models[name]
 

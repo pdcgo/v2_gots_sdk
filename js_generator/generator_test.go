@@ -3,6 +3,7 @@ package js_generator_test
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	"github.com/pdcgo/v2_gots_sdk/js_generator"
 	"github.com/stretchr/testify/assert"
@@ -29,6 +30,7 @@ type Categories struct {
 	BaseCCd
 	ErrMsg string        `json:"err_msg"`
 	Child  []*Categories `json:"child"`
+	Waktu  time.Time     `json:"waktu"`
 }
 
 type CategoriesData []*Categories
