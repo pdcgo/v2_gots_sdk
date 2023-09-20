@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -251,6 +252,7 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 		}
 
 		name := tipes.Name()
+		name = detectGeneric(name)
 		importObject := gen.Models[name]
 
 		if importObject != nil {
@@ -280,6 +282,24 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 
 	return `null`, "null", nil
 
+}
+
+func detectGeneric(name string) string {
+	rex := regexp.MustCompile(`\[(.+)\]`)
+	dd := rex.FindStringSubmatch(name)
+
+	generic := ""
+
+	if len(dd) > 0 {
+		generic = dd[1]
+		datas := strings.Split(generic, ".")
+		generic = datas[1]
+
+		names := strings.Split(name, "[")
+		name = names[0]
+	}
+
+	return name + generic
 }
 
 type InterfaceTsItem struct {

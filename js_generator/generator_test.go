@@ -40,6 +40,14 @@ type Res struct {
 	Typename   string         `json:"__typename"`
 }
 
+type Gener struct {
+	Fsld string `json:"fsld"`
+}
+
+type DDgeneric[T any] struct {
+	Data *T `json:"data"`
+}
+
 func TestGenerator(t *testing.T) {
 
 	buf := bytes.NewBufferString("")
@@ -58,4 +66,14 @@ func TestGenerator(t *testing.T) {
 
 	t.Log(value)
 	t.Log(tipe)
+
+	t.Run("test generic", func(t *testing.T) {
+		value, tipe, err := gen.GenerateFromStruct(DDgeneric[Gener]{}, 0)
+
+		assert.Nil(t, err)
+
+		t.Log(value)
+		t.Log(tipe)
+
+	})
 }
