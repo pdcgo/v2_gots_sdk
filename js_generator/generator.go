@@ -252,7 +252,7 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 		}
 
 		name := tipes.Name()
-		name = detectGeneric(name)
+		name = DetectGeneric(name)
 		importObject := gen.Models[name]
 
 		if importObject != nil {
@@ -284,7 +284,7 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 
 }
 
-func detectGeneric(name string) string {
+func DetectGeneric(name string) string {
 	rex := regexp.MustCompile(`\[(.+)\]`)
 	dd := rex.FindStringSubmatch(name)
 
@@ -293,7 +293,8 @@ func detectGeneric(name string) string {
 	if len(dd) > 0 {
 		generic = dd[1]
 		datas := strings.Split(generic, ".")
-		generic = datas[1]
+		c := len(datas)
+		generic = datas[c-1]
 
 		names := strings.Split(name, "[")
 		name = names[0]

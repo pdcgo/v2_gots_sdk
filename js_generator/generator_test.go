@@ -50,6 +50,17 @@ type DDgeneric[T any] struct {
 
 func TestGenerator(t *testing.T) {
 
+	t.Run("parsing generic name", func(t *testing.T) {
+		names := []string{"DDgeneric[command-line-arguments_test.Gener]", "AttributeRes[github.com/pdcgo/pdc_source_test.TokpedAttr]"}
+		values := []string{"DDgenericGener", "AttributeResTokpedAttr"}
+		for ind, name := range names {
+			hasil := js_generator.DetectGeneric(name)
+			assert.Equal(t, values[ind], hasil)
+			t.Log(hasil)
+		}
+
+	})
+
 	buf := bytes.NewBufferString("")
 	gen, err := js_generator.NewJsGenerator(buf)
 	assert.Nil(t, err)
