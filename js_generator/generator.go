@@ -108,6 +108,10 @@ func (gen *JsGenerator) IterateFieldStruct(data interface{}) (ObjectTs, Interfac
 func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string, string, error) {
 	level += 1
 
+	if data == nil {
+		return "{}", "any", nil
+	}
+
 	tipes := reflect.TypeOf(data)
 	values := reflect.ValueOf(data)
 

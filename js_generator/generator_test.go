@@ -48,7 +48,59 @@ type DDgeneric[T any] struct {
 	Data *T `json:"data"`
 }
 
+type MarkupFilterType string
+type MarkupType string
+
+const (
+	MARKUP_GREATER_THAN       MarkupFilterType = ">"
+	MARKUP_GREATER_THAN_EQUAL MarkupFilterType = ">="
+	MARKUP_LOWER_THAN         MarkupFilterType = "<"
+	MARKUP_LOWER_THAN_EQUAL   MarkupFilterType = "<="
+	MARKUP_RANGE              MarkupFilterType = "range"
+)
+
+const (
+	MARKUP_TYPE_PERCENT MarkupType = "percent"
+	MARKUP_TYPE_NUMBER  MarkupType = "number"
+)
+
+type MarkupData struct {
+	Mark  MarkupFilterType `json:"mark"`
+	Type  MarkupType       `json:"type"`
+	Range any              `json:"range"`
+	Up    [2]int           `json:"up"`
+}
+
+type DataTest struct {
+	Data    []MarkupData `json:"data"`
+	FixMark int          `json:"fix_mark"`
+	Name    string       `json:"name"`
+}
+
 func TestGenerator(t *testing.T) {
+
+	buf := bytes.NewBufferString("")
+	gen, err := js_generator.NewJsGenerator(buf)
+	assert.Nil(t, err)
+
+	t.Run("test model markupdata dengan any", func(t *testing.T) {
+		value, tipe, err := gen.GenerateFromStruct(MarkupData{}, 0)
+
+		assert.Nil(t, err)
+
+		t.Log(value)
+		t.Log(tipe)
+	})
+
+	t.Run("test model data test", func(t *testing.T) {
+
+		value, tipe, err := gen.GenerateFromStruct(DataTest{}, 0)
+
+		assert.Nil(t, err)
+
+		t.Log(value)
+		t.Log(tipe)
+	})
 
 	t.Run("parsing generic name", func(t *testing.T) {
 		names := []string{"DDgeneric[command-line-arguments_test.Gener]", "AttributeRes[github.com/pdcgo/pdc_source_test.TokpedAttr]"}
@@ -61,22 +113,20 @@ func TestGenerator(t *testing.T) {
 
 	})
 
-	buf := bytes.NewBufferString("")
-	gen, err := js_generator.NewJsGenerator(buf)
-	assert.Nil(t, err)
-
-	value, tipe, err := gen.GenerateFromStruct(Res{
-		Categories: CategoriesData{
-			&Categories{
-				BaseCCd: BaseCCd{Named: string(Tstatus)},
+	t.Run("test parsing categories", func(t *testing.T) {
+		value, tipe, err := gen.GenerateFromStruct(Res{
+			Categories: CategoriesData{
+				&Categories{
+					BaseCCd: BaseCCd{Named: string(Tstatus)},
+				},
 			},
-		},
-	}, 0)
+		}, 0)
 
-	assert.Nil(t, err)
+		assert.Nil(t, err)
 
-	t.Log(value)
-	t.Log(tipe)
+		t.Log(value)
+		t.Log(tipe)
+	})
 
 	t.Run("test generic", func(t *testing.T) {
 		value, tipe, err := gen.GenerateFromStruct(DDgeneric[Gener]{}, 0)
