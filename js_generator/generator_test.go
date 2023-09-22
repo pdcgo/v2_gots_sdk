@@ -87,4 +87,15 @@ func TestGenerator(t *testing.T) {
 		t.Log(tipe)
 
 	})
+
+	t.Run("test data uint", func(t *testing.T) {
+		var cc uint = 10
+		value, tipe, err := gen.GenerateFromStruct(cc, 0)
+
+		assert.Nil(t, err)
+		assert.Equal(t, tipe, "number")
+		t.Log(value)
+		t.Log(tipe)
+
+	})
 }
