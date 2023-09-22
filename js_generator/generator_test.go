@@ -77,11 +77,27 @@ type DataTest struct {
 	Name    string       `json:"name"`
 }
 
+type JsonStrip struct {
+	DataUnique string `json:"-"`
+}
+
 func TestGenerator(t *testing.T) {
 
 	buf := bytes.NewBufferString("")
 	gen, err := js_generator.NewJsGenerator(buf)
 	assert.Nil(t, err)
+
+	t.Run("test dengan json strip", func(t *testing.T) {
+		value, tipe, err := gen.GenerateFromStruct(JsonStrip{}, 0)
+
+		assert.Nil(t, err)
+		assert.NotContains(t, tipe, "data_unique")
+		assert.NotContains(t, tipe, "DataUnique")
+
+		t.Log(value)
+		t.Log(tipe)
+
+	})
 
 	t.Run("test model markupdata dengan any", func(t *testing.T) {
 		value, tipe, err := gen.GenerateFromStruct(MarkupData{}, 0)

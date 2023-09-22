@@ -71,7 +71,7 @@ func (gen *JsGenerator) IterateFieldStruct(data interface{}) (ObjectTs, Interfac
 		}
 
 		key := tipe.Tag.Get("json")
-		if key == "" {
+		if key == "" || key == "-" {
 			continue
 		}
 
