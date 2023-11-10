@@ -143,36 +143,34 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 		return strconv.FormatFloat(dat, 'f', 2, 32), tipestr, nil
 
 	case reflect.Uint:
-		dat := values.Interface().(uint)
-		return strconv.FormatUint(uint64(dat), 10), "number", nil
-
+		dat := values.Uint()
+		return strconv.FormatUint(dat, 10), "number", nil
 	case reflect.Uint8:
-		dat := values.Interface().(uint8)
-		return strconv.FormatUint(uint64(dat), 10), "number", nil
-
+		dat := values.Uint()
+		return strconv.FormatUint(dat, 10), "number", nil
 	case reflect.Uint16:
-		dat := values.Interface().(uint16)
-		return strconv.FormatUint(uint64(dat), 10), "number", nil
+		dat := values.Uint()
+		return strconv.FormatUint(dat, 10), "number", nil
 	case reflect.Uint32:
-		dat := values.Interface().(uint32)
-		return strconv.FormatUint(uint64(dat), 10), "number", nil
+		dat := values.Uint()
+		return strconv.FormatUint(dat, 10), "number", nil
 	case reflect.Uint64:
-		dat := values.Interface().(uint64)
+		dat := values.Uint()
 		return strconv.FormatUint(dat, 10), "number", nil
 	case reflect.Int:
-		dat := values.Interface().(int)
-		return strconv.Itoa(dat), "number", nil
+		dat := values.Int()
+		return strconv.Itoa(int(dat)), "number", nil
 	case reflect.Int16:
-		dat := values.Interface().(int16)
+		dat := values.Int()
 		return strconv.Itoa(int(dat)), "number", nil
 	case reflect.Int32:
-		dat := values.Interface().(int32)
+		dat := values.Int()
 		return strconv.Itoa(int(dat)), "number", nil
 	case reflect.Int64:
-		dat := values.Interface().(int64)
+		dat := values.Int()
 		return strconv.Itoa(int(dat)), "number", nil
 	case reflect.Int8:
-		dat := values.Interface().(int8)
+		dat := values.Int()
 		return strconv.Itoa(int(dat)), "number", nil
 
 	case reflect.Map:
