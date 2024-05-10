@@ -10,12 +10,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type IntEnum int
+type UintEnum uint
+
 type PayloadDataDD struct {
 	Name string `json:"name"`
 }
 
 type ResponseData struct {
-	Data string `json:"data"`
+	Data  string   `json:"data"`
+	Page  IntEnum  `json:"page"`
+	Page2 UintEnum `json:"page2"`
 }
 
 func TestCreateSDK(t *testing.T) {
