@@ -48,6 +48,11 @@ type DDgeneric[T any] struct {
 	Data *T `json:"data"`
 }
 
+type DobleGeneric[T any, K any] struct {
+	Data *T `json:"data"`
+	Ks   *K `json:"cc"`
+}
+
 type MarkupFilterType string
 type MarkupType string
 
@@ -151,6 +156,32 @@ func TestGenerator(t *testing.T) {
 
 		t.Log(value)
 		t.Log(tipe)
+
+	})
+
+	t.Run("test generic double", func(t *testing.T) {
+		value, tipe, err := gen.GenerateFromStruct(DobleGeneric[Gener, MarkupData]{}, 0)
+
+		assert.Nil(t, err)
+
+		t.Log(value)
+		t.Log(tipe)
+
+	})
+
+	t.Run("testing generic name", func(t *testing.T) {
+
+		t.Run("testing generic double", func(t *testing.T) {
+			name := "DobleGeneric[github.com/pdcgo/v2_gots_sdk/js_generator_test.Gener,github.com/pdcgo/v2_gots_sdk/js_generator_test.MarkupData]"
+			name = js_generator.DetectGeneric(name)
+			assert.Equal(t, "DobleGenericGenerMarkupData", name)
+		})
+
+		t.Run("testing generic single", func(t *testing.T) {
+			name := "DobleGeneric[github.com/pdcgo/v2_gots_sdk/js_generator_test.Gener]"
+			name = js_generator.DetectGeneric(name)
+			assert.Equal(t, "DobleGenericGener", name)
+		})
 
 	})
 

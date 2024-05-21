@@ -3,6 +3,7 @@ package js_generator
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -272,6 +273,7 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 
 		name := tipes.Name()
 		name = DetectGeneric(name)
+
 		importObject := gen.Models[name]
 
 		if importObject != nil {
@@ -310,10 +312,16 @@ func DetectGeneric(name string) string {
 	generic := ""
 
 	if len(dd) > 0 {
-		generic = dd[1]
-		datas := strings.Split(generic, ".")
-		c := len(datas)
-		generic = datas[c-1]
+
+		matchend := dd[1]
+
+		multidata := strings.Split(matchend, ",")
+		log.Println(multidata)
+		for _, gene := range multidata {
+			datas := strings.Split(gene, ".")
+			c := len(datas)
+			generic += datas[c-1]
+		}
 
 		names := strings.Split(name, "[")
 		name = names[0]
