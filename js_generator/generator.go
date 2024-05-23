@@ -2,6 +2,7 @@ package js_generator
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"reflect"
@@ -106,6 +107,20 @@ func (gen *JsGenerator) IterateFieldStruct(data interface{}) (ObjectTs, Interfac
 
 }
 
+type EnumString interface {
+	EnumList() []string
+}
+
+func convertUnion(datas []string) string {
+	hasil := []string{}
+
+	for _, val := range datas {
+		hasil = append(hasil, fmt.Sprintf(`"%s"`, val))
+	}
+
+	return strings.Join(hasil, " | ")
+}
+
 func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string, string, error) {
 	level += 1
 
@@ -119,10 +134,20 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 	switch tipes.Kind() {
 	case reflect.String:
 		dd := values.Interface()
+
+		// check enum
+		enumdat, okc := dd.(EnumString)
+		if okc {
+			enumList := enumdat.EnumList()
+			union := convertUnion(enumList)
+			return "`" + enumList[0] + "`", union, nil
+		}
+
 		cc, ok := dd.(string)
 		if !ok {
 			return "``", "string", nil
 		}
+
 		return "`" + cc + "`", "string", nil
 
 	case reflect.Bool:

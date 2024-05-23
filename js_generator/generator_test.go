@@ -2,6 +2,7 @@ package js_generator_test
 
 import (
 	"bytes"
+	"io"
 	"testing"
 	"time"
 
@@ -195,4 +196,44 @@ func TestGenerator(t *testing.T) {
 		t.Log(tipe)
 
 	})
+}
+
+type WithoutEnum string
+
+type OrderType string
+
+func (or OrderType) EnumList() []string {
+	return []string{
+		"success",
+		"ongoing",
+		"cancel",
+	}
+}
+
+type Order struct {
+	Tipe        OrderType   `json:"tipe"`
+	WithoutEnum WithoutEnum `json:"without_enum"`
+}
+
+func TestEnum(t *testing.T) {
+	buf := bytes.NewBufferString("")
+	gen, err := js_generator.NewJsGenerator(buf)
+	assert.Nil(t, err)
+
+	t.Run("test enum cuma string", func(t *testing.T) {
+		cc := Order{}
+
+		value, tipe, err := gen.GenerateFromStruct(cc, 0)
+
+		assert.Nil(t, err)
+
+		t.Log(value)
+		t.Log(tipe)
+
+		data, err := io.ReadAll(buf)
+		assert.Nil(t, err)
+
+		t.Log(string(data))
+	})
+
 }
