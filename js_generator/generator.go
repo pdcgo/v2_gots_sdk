@@ -286,6 +286,9 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 		// value, err := GenerateFromStruct(val)
 		// data = append(data, value)
 
+		// remove undefined jare toni
+		tipeArray = strings.ReplaceAll(tipeArray, " | undefined", "")
+
 		tipeArray = "Array<" + tipeArray + ">"
 
 		return arrayValue.GenerateTs(level) + " as " + tipeArray, tipeArray, nil
