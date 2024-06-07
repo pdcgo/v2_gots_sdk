@@ -3,6 +3,7 @@ package pdc_api
 import (
 	_ "embed"
 	"io"
+	"log"
 	"os"
 	"strings"
 
@@ -18,14 +19,14 @@ type V2SdkTemplating struct {
 	CloseFunc func() error
 }
 
-func NewV2SdkTemplating(fname string) (*V2SdkTemplating, error) {
+func NewV2SdkTemplating(fname string, templatefile string) (*V2SdkTemplating, error) {
 
 	f, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
 	if err != nil {
 		return nil, err
 	}
 
-	closeTemplate := WriteSdkTemplate(f)
+	closeTemplate := WriteSdkTemplate(f, templatefile)
 
 	gen, err := js_generator.NewJsGenerator(f)
 
@@ -145,13 +146,29 @@ func (root *V2SdkTemplating) Register(apispec *Api) error {
 	return nil
 }
 
-func WriteSdkTemplate(writer io.StringWriter) func() error {
-	sdkpart := strings.Split(string(sdkTemplate), `// <client_declaration>`)
+func WriteSdkTemplate(writer io.StringWriter, templatefile string) func() error {
+	var importheader string
+	var afterdeclaration string
+	var tempByte []byte
 
-	writer.WriteString(sdkpart[0])
+	if templatefile == "" {
+		tempByte = sdkTemplate
+	} else {
+		cstContent, err := os.ReadFile(templatefile)
+		if err != nil {
+			log.Panicln(err)
+		}
+		tempByte = cstContent
+	}
+
+	sdkpart := strings.Split(string(tempByte), `// <client_declaration>`)
+	importheader = sdkpart[0]
+	afterdeclaration = sdkpart[len(sdkpart)-1]
+
+	writer.WriteString(importheader)
 
 	return func() error {
-		_, err := writer.WriteString(sdkpart[len(sdkpart)-1])
+		_, err := writer.WriteString(afterdeclaration)
 		return err
 	}
 }

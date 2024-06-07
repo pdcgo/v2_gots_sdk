@@ -14,9 +14,9 @@ type ApiSdk struct {
 	toSdk AddSdkFunc
 }
 
-func (sdk *ApiSdk) GenerateSdkFunc(fname string) (createSdkJs func(), err error) {
+func (sdk *ApiSdk) GenerateSdkFunc(fname string, templatefile string) (createSdkJs func(), err error) {
 
-	template, err := pdc_api.NewV2SdkTemplating(fname)
+	template, err := pdc_api.NewV2SdkTemplating(fname, templatefile)
 
 	if err != nil {
 		return createSdkJs, err

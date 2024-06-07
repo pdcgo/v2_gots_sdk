@@ -3,3 +3,5 @@ socketsdk.ts
 websocket.ts
 
 websocket2.ts
+
+sdk_custom.ts
