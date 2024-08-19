@@ -117,7 +117,9 @@ func convertUnion(datas []string) string {
 	for _, val := range datas {
 		hasil = append(hasil, fmt.Sprintf(`"%s"`, val))
 	}
-
+	hasil = append(hasil,
+		`({} & string)`,
+	)
 	return strings.Join(hasil, " | ")
 }
 

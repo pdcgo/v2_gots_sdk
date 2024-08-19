@@ -232,8 +232,8 @@ func TestEnum(t *testing.T) {
 
 		data, err := io.ReadAll(buf)
 		assert.Nil(t, err)
-
-		t.Log(string(data))
+		assert.Contains(t, string(data), `({} & string)`)
+		// t.Error(string(data))
 	})
 
 }
