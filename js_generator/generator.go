@@ -167,7 +167,9 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 
 	case reflect.Float64:
 		tipestr := "number"
-		dat := values.Interface().(float64)
+
+		// log.Println(values.CanFloat(), "asdasdasd", values.Float())
+		dat := values.Float()
 		return strconv.FormatFloat(dat, 'f', 2, 32), tipestr, nil
 
 	case reflect.Uint:

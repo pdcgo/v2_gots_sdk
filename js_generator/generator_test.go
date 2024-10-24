@@ -237,3 +237,29 @@ func TestEnum(t *testing.T) {
 	})
 
 }
+
+type CustomStr string
+type MapKeyCustom[T any] struct {
+	D T `json:"data"`
+}
+
+func TestMapCustomKeyType(t *testing.T) {
+
+	buf := bytes.NewBufferString("")
+	gen, err := js_generator.NewJsGenerator(buf)
+	assert.Nil(t, err)
+
+	cc := MapKeyCustom[map[CustomStr][]*Order]{}
+
+	value, tipe, err := gen.GenerateFromStruct(cc, 0)
+
+	assert.Nil(t, err)
+
+	t.Log(value)
+	t.Log(tipe)
+
+	data, err := io.ReadAll(buf)
+	assert.Nil(t, err)
+	t.Log(string(data))
+
+}

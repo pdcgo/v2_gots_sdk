@@ -17,10 +17,13 @@ type PayloadDataDD struct {
 	Name string `json:"name"`
 }
 
+type MarkupValue float64
+
 type ResponseData struct {
-	Data  string   `json:"data"`
-	Page  IntEnum  `json:"page"`
-	Page2 UintEnum `json:"page2"`
+	Data  string      `json:"data"`
+	Page  IntEnum     `json:"page"`
+	Page2 UintEnum    `json:"page2"`
+	Val   MarkupValue `json:"val"`
 }
 
 func TestCreateSdkCustomTemplate(t *testing.T) {
