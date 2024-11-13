@@ -307,6 +307,7 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 			return "`2021-12-01T07:00:00+07:00`", "string", nil
 		case ProxyStruct:
 			data = dd.ProxyStruct()
+			return gen.GenerateFromStruct(data, level)
 		}
 
 		name := tipes.Name()

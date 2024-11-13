@@ -246,23 +246,57 @@ func (or Prox) ProxyStruct() interface{} {
 	return or.Ignored
 }
 
+type ProxPoint struct {
+	Ignored *Order `json:"ignored"`
+	Prox    *Prox  `json:"prox"`
+}
+
+func (or ProxPoint) ProxyStruct() interface{} {
+	return or.Ignored
+}
+
+type WProxPoint struct {
+	DD *ProxPoint `json:"proxss"`
+}
+
 func TestProxyStruct(t *testing.T) {
-	buf := bytes.NewBufferString("")
-	gen, err := js_generator.NewJsGenerator(buf)
-	assert.Nil(t, err)
+	t.Run("without pointer", func(t *testing.T) {
+		buf := bytes.NewBufferString("")
+		gen, err := js_generator.NewJsGenerator(buf)
+		assert.Nil(t, err)
 
-	cc := Prox{}
+		cc := Prox{}
 
-	value, tipe, err := gen.GenerateFromStruct(cc, 0)
+		value, tipe, err := gen.GenerateFromStruct(cc, 0)
 
-	assert.Nil(t, err)
+		assert.Nil(t, err)
 
-	t.Log(value)
-	t.Log(tipe)
+		t.Log(value)
+		t.Log(tipe)
 
-	data, err := io.ReadAll(buf)
-	assert.Nil(t, err)
-	assert.NotContains(t, string(data), `ignored`)
+		data, err := io.ReadAll(buf)
+		assert.Nil(t, err)
+		assert.NotContains(t, string(data), `ignored`)
+	})
+
+	t.Run("wit pointer", func(t *testing.T) {
+		buf := bytes.NewBufferString("")
+		gen, err := js_generator.NewJsGenerator(buf)
+		assert.Nil(t, err)
+
+		cc := WProxPoint{}
+
+		value, tipe, err := gen.GenerateFromStruct(cc, 0)
+
+		assert.Nil(t, err)
+
+		t.Log(value)
+		t.Log(tipe)
+
+		data, err := io.ReadAll(buf)
+		assert.Nil(t, err)
+		assert.NotContains(t, string(data), `ignored`)
+	})
 
 }
 
