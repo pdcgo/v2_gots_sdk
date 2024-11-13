@@ -238,6 +238,34 @@ func TestEnum(t *testing.T) {
 
 }
 
+type Prox struct {
+	Ignored Order `json:"ignored"`
+}
+
+func (or Prox) ProxyStruct() interface{} {
+	return or.Ignored
+}
+
+func TestProxyStruct(t *testing.T) {
+	buf := bytes.NewBufferString("")
+	gen, err := js_generator.NewJsGenerator(buf)
+	assert.Nil(t, err)
+
+	cc := Prox{}
+
+	value, tipe, err := gen.GenerateFromStruct(cc, 0)
+
+	assert.Nil(t, err)
+
+	t.Log(value)
+	t.Log(tipe)
+
+	data, err := io.ReadAll(buf)
+	assert.Nil(t, err)
+	assert.NotContains(t, string(data), `ignored`)
+
+}
+
 type CustomStr string
 type MapKeyCustom[T any] struct {
 	D T `json:"data"`

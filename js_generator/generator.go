@@ -111,6 +111,10 @@ type EnumString interface {
 	EnumList() []string
 }
 
+type ProxyStruct interface {
+	ProxyStruct() interface{}
+}
+
 func convertUnion(datas []string) string {
 	hasil := []string{}
 
@@ -298,9 +302,11 @@ func (gen *JsGenerator) GenerateFromStruct(data interface{}, level int) (string,
 		return arrayValue.GenerateTs(level) + " as " + tipeArray, tipeArray, nil
 
 	case reflect.Struct:
-		switch data.(type) {
+		switch dd := data.(type) {
 		case time.Time:
 			return "`2021-12-01T07:00:00+07:00`", "string", nil
+		case ProxyStruct:
+			data = dd.ProxyStruct()
 		}
 
 		name := tipes.Name()
