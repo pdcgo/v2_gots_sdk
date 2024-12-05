@@ -50,6 +50,10 @@ type SdkGroup struct {
 	Basepath string
 }
 
+func (grp *SdkGroup) GetGinEngine() *gin.Engine {
+	return grp.sdk.R
+}
+
 func (grp *SdkGroup) Register(api *pdc_api.Api, handlers ...gin.HandlerFunc) gin.IRoutes {
 	api.GroupPath = grp.Basepath
 	grp.sdk.toSdk(api)
